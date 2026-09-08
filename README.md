@@ -1,5 +1,9 @@
 # TeensyRA8876-8080
 ## A RA8876 8080 parallel driver library for Teensy boards and variants.
+## CHANGES:
+09-07-26:
+- Reworked "graphicCursor.ino" sketch. Installed new process_mouse() function for processing mouse delta X and delta Y scaling as well as processing mouse button single, double clicks and object dragging with mouse pointer.
+
 
 ### ************** NEW SPEED IMPROVEMENT!! SEE BELOW. ******************
 
