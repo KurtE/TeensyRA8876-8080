@@ -47,7 +47,7 @@ const char *button[] = {"IDLE        ",
 	                    "DOUBLE_CLICK"}; 
 
 // Button states 
-enum { IDLE = 0, DRAG_INITIATED, DRAGGING, DRAG_RELEASED, SINGLE_CLICK, DOUBLE_CLICK };
+enum  { IDLE = 0, DRAG_INITIATED, DRAGGING, DRAG_RELEASED, SINGLE_CLICK, DOUBLE_CLICK };
 
 // A structure to hold results of mouse operations.
 // Some are not used in this sketch.
@@ -92,13 +92,14 @@ void scaleMouseXY(void) {
 }
 
 // Check for mouse button presses
-uint8_t getMouseButtons(void) {
-  mouse_msg.buttons = (uint8_t)mouse1.getButtons();
-  return mouse_msg.buttons;
-}
+//uint8_t getMouseButtons(void) {
+//  mouse_msg.buttons = (uint8_t)mouse1.getButtons();
+//  return mouse_msg.buttons;
+//}
 
 // Process mouse buttons
 uint8_t process_mouse(uint8_t button_num) {
+  mouse_msg.buttons = (uint8_t)mouse1.getButtons();
   scaleMouseXY();
   mouse_msg.wheel += (int8_t)mouse1.getWheel(); // Check for wheel movement
   mouse_msg.wheelH += (int8_t)mouse1.getWheelH();
@@ -106,7 +107,7 @@ uint8_t process_mouse(uint8_t button_num) {
   // Extract relative movement deltas
   int16_t deltaX = mouse1.getMouseX();
   int16_t deltaY = mouse1.getMouseY();
-  // State 1: Detect if button is pressed.
+  // 1. Edge Detection: BUTTON PRESSED ---
   if(mouse_msg.isButtonDown && !mouse_msg.lastButtonState) {
     unsigned long currentTime = millis();
     mouse_msg.accumulatedX = 0;
@@ -125,7 +126,7 @@ uint8_t process_mouse(uint8_t button_num) {
       mouse_msg.lastClickTime = currentTime;
     }
   }
-  // State 2: Button held down and mouse is moving.
+  // 2. State Processing: BUTTON HELD DOWN & MOUSE MOVING ---
   if(mouse_msg.isButtonDown) {
     mouse_msg.accumulatedX += deltaX;
     mouse_msg.accumulatedY += deltaY;
@@ -137,11 +138,11 @@ uint8_t process_mouse(uint8_t button_num) {
         mouse_msg.expectingSecondClick = false; // Dragging invalidates an incoming click event
         mouse_msg.button_state = DRAG_INITIATED;
       }
-      // Call the active drag step with current scaled deltas
-      mouse_msg.button_state = DRAGGING;
+      // Call the active drag step with current motion deltas
+        mouse_msg.button_state = DRAGGING;
     }
   }
-  // State 3: Check if button is released. 
+  // --- 3. Edge Detection: BUTTON RELEASED ---
   if(!mouse_msg.isButtonDown && mouse_msg.lastButtonState) {
     if(mouse_msg.isDragging) {
       mouse_msg.isDragging = false;
@@ -150,7 +151,7 @@ uint8_t process_mouse(uint8_t button_num) {
   }
   // Save state for transition history tracking
   mouse_msg.lastButtonState = mouse_msg.isButtonDown;
-  // State 4: Asynchronous Click Expiration Window.
+  // 4. Asynchronous Click Expiration Window ---
   // If the button was pressed, released, and no dragging or second click happens:
   if(mouse_msg.expectingSecondClick && !mouse_msg.isButtonDown && (millis() - mouse_msg.lastClickTime > DOUBLE_CLICK_WINDOW)) {
     mouse_msg.button_state = SINGLE_CLICK;
@@ -159,7 +160,6 @@ uint8_t process_mouse(uint8_t button_num) {
   }
   return mouse_msg.button_state;	
 }
-
 
 void setup() {
   //I'm guessing most copies of this display are using external PWM
@@ -186,8 +186,6 @@ void setup() {
   mouse_msg.scaledY = 300;
   mouse_msg.buttons = 0;
   
-  Serial.printf("%cUSB Mouse and Graphic Cursor Testing\n",12);
-
   tft.fillScreen(DARKBLUE);
   tft.setFontSize(1, false);
   tft.setCursor(0,0);
@@ -207,16 +205,16 @@ void setup() {
 }
 
 void display_mouse_data(void) {
-  tft.Graphic_Cursor_XY(mouse_msg.scaledX, mouse_msg.scaledY); // Position cursor on screen
-  tft.textxy(0,5);
-  tft.printf("      Mouse X: %4d\n", mouse_msg.scaledX);
-  tft.printf("      Mouse Y: %4d\n", mouse_msg.scaledY);
-  tft.printf("      Buttons: %4d\n", getMouseButtons());
-  tft.printf("        Wheel: %4d\n", mouse_msg.wheel);
-  tft.printf("       WheelH: %4d\n", mouse_msg.wheelH);
-  tft.printf("Single Clicks: %4d\n", mouse_msg.scCount);
-  tft.printf("Double Clicks: %4d\n", mouse_msg.dcCount);
-  tft.printf("Button State: %s\n",button[mouse_msg.button_state]);
+    tft.Graphic_Cursor_XY(mouse_msg.scaledX, mouse_msg.scaledY); // Position cursor on screen
+    tft.textxy(0,5);
+    tft.printf("      Mouse X: %4d\n", mouse_msg.scaledX);
+    tft.printf("      Mouse Y: %4d\n", mouse_msg.scaledY);
+    tft.printf("      Buttons: %4d\n", mouse_msg.buttons);
+    tft.printf("        Wheel: %4d\n", mouse_msg.wheel);
+    tft.printf("       WheelH: %4d\n", mouse_msg.wheelH);
+    tft.printf("Single Clicks: %4d\n", mouse_msg.scCount);
+    tft.printf("Double Clicks: %4d\n", mouse_msg.dcCount);
+    tft.printf("Button State: %s\n",button[mouse_msg.button_state]);
 }
  
 void loop() {
